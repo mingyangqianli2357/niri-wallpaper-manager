@@ -6,45 +6,57 @@ import subprocess
 import sys
 import threading
 
+
 def get_json(args):
-    return json.loads(subprocess.run(args, capture_output=True, text=True).stdout)
+    return json.loads(
+        subprocess.run(args, capture_output=True, text=True, check=True).stdout
+    )
+
 
 def decide():
-    if get_json(['niri', 'msg', '--json', 'overview-state'])['is_open']:
-        return 'uncovered'
-    if get_json(['niri', 'msg', '--json', 'focused-window']) is None:
-        return 'uncovered'
-    return 'covered'
+    if get_json(["niri", "msg", "--json", "overview-state"])["is_open"]:
+        return "uncovered"
+    if get_json(["niri", "msg", "--json", "focused-window"]) is None:
+        return "uncovered"
+    return "covered"
+
 
 def pump(events):
-    for x in subprocess.Popen(['niri', 'msg', '--json', 'event-stream'], stdout=subprocess.PIPE).stdout:
-            events.put(1)
+    proc = subprocess.Popen(
+        ["niri", "msg", "--json", "event-stream"], stdout=subprocess.PIPE
+    )
+
+    assert proc.stdout is not None
+
+    for x in proc.stdout:
+        events.put(1)
+
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('-c', '--covered', required=True)
-    ap.add_argument('-u', '--uncovered', required=True)
-    ap.add_argument('-i', '--init')
-    ap.add_argument('-q', '--quit')
+    ap.add_argument("-c", "--covered", required=True)
+    ap.add_argument("-u", "--uncovered", required=True)
+    ap.add_argument("-i", "--init")
+    ap.add_argument("-q", "--quit")
     args = ap.parse_args()
-    
+
     def on_quit(signum, frame):
         if args.quit:
-          subprocess.run(args.quit, shell=True)
+            subprocess.run(args.quit, shell=True, check=True)
         sys.exit(0)
 
     signal.signal(signal.SIGINT, on_quit)
     signal.signal(signal.SIGTERM, on_quit)
 
     cmds = {"covered": args.covered, "uncovered": args.uncovered}
-    
+
     def run(state):
-        subprocess.run(cmds[state], shell=True)
+        subprocess.run(cmds[state], shell=True, check=True)
 
     current = None
-    
+
     if args.init:
-        subprocess.run(args.init, shell=True)
+        subprocess.run(args.init, shell=True, check=True)
     else:
         current = decide()
         run(current)
@@ -58,6 +70,7 @@ def main():
         if want != current:
             run(want)
             current = want
-    
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     main()
