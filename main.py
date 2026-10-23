@@ -9,7 +9,7 @@ import threading
 
 def get_json(args):
     return json.loads(
-        subprocess.run(args, capture_output=True, text=True, check=True).stdout
+        subprocess.run(args, capture_output=True, text=True).stdout
     )
 
 
@@ -42,7 +42,7 @@ def main():
 
     def on_quit(signum, frame):
         if args.quit:
-            subprocess.run(args.quit, shell=True, check=True)
+            subprocess.run(args.quit, shell=True)
         sys.exit(0)
 
     signal.signal(signal.SIGINT, on_quit)
@@ -51,12 +51,12 @@ def main():
     cmds = {"covered": args.covered, "uncovered": args.uncovered}
 
     def run(state):
-        subprocess.run(cmds[state], shell=True, check=True)
+        subprocess.run(cmds[state], shell=True)
 
     current = None
 
     if args.init:
-        subprocess.run(args.init, shell=True, check=True)
+        subprocess.run(args.init, shell=True)
     else:
         current = decide()
         run(current)
